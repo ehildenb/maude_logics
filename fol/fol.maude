@@ -1,0 +1,140 @@
+fmod LTERM is
+    protecting NAT .
+    protecting BOOL .
+
+    sorts Var LTerm .
+    subsort Var < LTerm .
+
+    sorts SeqLTerm Lf Lf0 .
+    subsort LTerm < SeqLTerm .
+    subsorts Lf0 < Lf LTerm .
+
+    sort Subst .
+
+    op _,_   : SeqLTerm SeqLTerm -> SeqLTerm [ctor assoc] .
+    op _(_)  : Lf SeqLTerm -> [LTerm] .
+
+    op nary? : Nat SeqLTerm -> Bool .
+    op arity : Lf -> Nat .
+
+    var T : LTerm .
+    var S : SeqLTerm .
+    var N : Nat .
+    var F : Lf .
+
+    eq nary?(s(0), T)       = true .
+    eq nary?(s(N), (T , S)) = nary?(N,S) .
+    eq nary?(N, S)          = false [owise] .
+
+    cmb F(S) : LTerm if nary?(arity(F),S) .
+    cmb F    : Lf0   if arity(F) == 0 .
+
+    op [_:=_] : Var LTerm -> Subst .
+    op __     : LTerm Subst -> LTerm .
+    op __     : SeqLTerm Subst -> LTerm .
+
+    vars X Y : Var .
+    var F0   : Lf0 .
+    var T'   : LTerm .
+
+    eq X [Y := T']       = if X == Y then T' else X fi .
+    eq F0 [X := T']      = F0 .
+    eq F(S) [X := T']    = F(S [X := T']) .
+    eq (T , S) [X := T'] = (T [X := T']) , (S [X := T']) .
+endfm
+
+fmod ATOMIC-LFORMULA is
+    protecting LTERM .
+
+    sort AtomicLFormula .
+    sorts Lr Lr0 .
+    subsorts Lr0 < Lr SeqLTerm .
+
+    ops tt ff : -> AtomicLFormula .
+    op _[_]   : Lr SeqLTerm -> [AtomicLFormula] .
+
+    op arity : Lr -> Nat .
+
+    op _=_ : LTerm LTerm -> AtomicLFormula .
+
+    var S : SeqLTerm .
+    var R : Lr .
+
+    cmb R[S] : AtomicLFormula if nary?(arity(R),S) .
+    cmb R    : Lr0            if arity(R) == 0 .
+
+    op __ : AtomicLFormula Subst -> AtomicLFormula .
+
+    var X         : Var .
+    var R0        : Lr0 .
+    vars T T' T'' : LTerm .
+
+    eq R0 [X := T]         = R0 .
+    eq R[S] [X := T]       = R[S[X := T]] .
+    eq (T = T') [X := T''] = (T [X := T'']) = (T' [X := T'']) .
+endfm
+
+fmod LFORMULA is
+    protecting ATOMIC-LFORMULA .
+
+    sort LFormula .
+    subsort AtomicLFormula < LFormula .
+
+    op -_    : LFormula -> LFormula .
+    op _->_  : LFormula LFormula -> LFormula .
+    op _/\_  : LFormula LFormula -> LFormula .
+    op _\/_  : LFormula LFormula -> LFormula .
+    op _<->_ : LFormula LFormula -> LFormula .
+    op E_._  : Var      LFormula -> LFormula .
+    op A_._  : Var      LFormula -> LFormula .
+
+    vars P Q : LFormula .
+
+    eq P <-> Q = (P -> Q) /\ (Q -> P) .
+
+    op __ : LFormula Subst -> LFormula .
+
+    vars X Y : Var .
+    var T    : LTerm .
+
+    eq (- P) [X := T]     = - (P [X := T]) .
+    eq (P -> Q) [X := T]  = (P [X := T]) -> (Q [X := T]) .
+    eq (P /\ Q) [X := T]  = (P [X := T]) /\ (Q [X := T]) .
+    eq (P \/ Q) [X := T]  = (P [X := T]) \/ (Q [X := T]) .
+    eq (E X . P) [Y := T] = E X . (if X == Y then P else P [Y := T] fi) .
+    eq (A X . P) [Y := T] = A X . (if X == Y then P else P [Y := T] fi) .
+endfm
+
+fmod DREAL is
+    protecting RAT .
+    protecting LFORMULA .
+
+    sort Real .
+    subsort Rat < Real .
+    sort DRLFormula .
+    subsort LFormula < DRLFormula .
+
+    op A[_,_]_._ : Real Real Var DRLFormula -> DRLFormula .
+    op E[_,_]_._ : Real Real Var DRLFormula -> DRLFormula .
+endfm
+
+
+
+mod THERMOSTAT is
+    protecting DREAL .
+
+    sort Temp .
+    subsort Real < Temp .
+
+    sort StateLabel State .
+
+    ops MINTEMP MAXTEMP : -> Temp .
+    eq MINTEMP = 16 .
+    eq MAXTEMP = 24 .
+
+    ops heat off : -> StateLabel .
+    op _[_] : StateLabel Temp -> State .
+
+    rl heat [ T ] => off  [ T ] if T > MAXTEMP .
+    rl off  [ T ] => heat [ T ] if T < MINTEMP .
+endm

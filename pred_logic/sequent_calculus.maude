@@ -8,7 +8,9 @@ fmod PRED-LOG is
     sorts Side ProofOp .
     sort Fid .
 
-    vars F1 F2 : Form .
+    vars N : Nat . var Q : Qid .
+    vars F F1 F2 : Form . vars LF LF' LF'' : LForm .
+    vars FID FID' : Fid . var P : Proof . var PO : ProofOp .
 
     ops tt ff : -> Form .
     op -_ : Form -> Form .
@@ -18,12 +20,10 @@ fmod PRED-LOG is
     op _<->_ : Form Form -> Form .
     ------------------------------
     eq - (- F) = F .
-    --- eq F1 -> F2 = (- F1) \/ F2 .
     eq F1 <-> F2 = (F1 -> F2) /\ (F2 -> F1) .
 
-    vars N : Nat . var Q : Qid . vars FID FID' : Fid . var P : Proof . var F : Form . vars LF LF' LF'' : LForm .
-
     op _:_ : Qid Nat -> Fid .
+    -------------------------
 
     op mt : -> LForm .
     op _{_} : Fid Form -> LForm [prec 35] .
@@ -39,31 +39,34 @@ fmod PRED-LOG is
 
     op mt : -> Proof .
     op {_} : Sequent -> Proof [prec 60] .
-    op _;_ : Proof Proof -> Proof [assoc comm id: mt prec 65 format(d d n d)] .
-    -----------------------------------------------------------
+    op _;_ : Proof Proof -> Proof [assoc id: mt prec 65 format(d d n d)] .
+    ----------------------------------------------------------------------
     eq {FID{F} ; LF |- FID'{F} ; LF'} = mt .
 
     op _[_] : ProofOp Proof -> [Proof] .
     ------------------------------------
-    eq - L FID [ { LF ; FID{- F} |- LF'          } ; P ]
-     =           { LF            |- LF' ; FID{F} } ; P .
-    eq - R FID [ { LF          |- LF' ; FID{- F} } ; P ]
-     =           { LF ; FID{F} |- LF'            } ; P .
+    eq - L FID [ { LF ; FID{F} |- LF'            } ; P ]
+     =           { LF          |- LF' ; FID{- F} } ; P .
+    eq - R FID [ { LF            |- LF' ; FID{F} } ; P ]
+     =           { LF ; FID{- F} |- LF'          } ; P .
 
     eq /\ L (Q : N) [ { LF ; (Q : N){F1 /\ F2}           |- LF' } ; P ]
      =                { LF ; (Q : N){F1} ; (Q : s N){F2} |- LF' } ; P .
-    eq /\ R (Q : N) [ { LF |- LF' ; (Q : N){F1 /\ F2} }                           ; P ]
-     =                { LF |- LF' ; (Q : N){F1} } ; { LF |- LF' ; (Q : s N){F2} } ; P .
+    eq /\ R FID [ { LF |- LF' ; FID{F1 /\ F2} }                     ; P ]
+     =            { LF |- LF' ; FID{F1} } ; { LF |- LF' ; FID{F2} } ; P .
 
-    eq \/ L (Q : N) [ { LF ; (Q : N){F1 \/ F2} |- LF' }                           ; P ]
-     =                { LF ; (Q : N){F1} |- LF' } ; { LF ; (Q : s N){F2} |- LF' } ; P .
+    eq \/ L FID [ { LF ; FID{F1 \/ F2} |- LF' }                         ; P ]
+     =                { LF ; FID{F1} |- LF' } ; { LF ; FID{F2} |- LF' } ; P .
     eq \/ R (Q : N) [ { LF |- LF' ; (Q : N){F1 \/ F2}           } ; P ]
      =                { LF |- LF' ; (Q : N){F1} ; (Q : s N){F2} } ; P .
 
-    eq -> L (Q : N) [ { LF ; (Q : N){F1 -> F2} |- LF' }                           ; P ]
-     =                { LF ; (Q : N){F2} |- LF' } ; { LF |- LF' ; (Q : s N){F1} } ; P .
-    eq -> R (Q : N) [ { LF               |- LF' ; (Q : N){F1 -> F2} } ; P ]
-     =                { LF ; (Q : N){F1} |- LF' ; (Q : s N){F2} }     ; P .
+    eq -> L FID [ { LF ; FID{F1 -> F2} |- LF' }                     ; P ]
+     =            { LF ; FID{F2} |- LF' } ; { LF |- LF' ; FID{F1} } ; P .
+    eq -> R FID [ { LF           |- LF' ; FID{F1 -> F2} } ; P ]
+     =            { LF ; FID{F1} |- LF' ; FID{F2} }       ; P .
+
+     eq PO [ mt ] = mt .
+     eq PO [ { LF |- LF' } ; P ] = { LF |- LF' } ; PO [ P ] [owise] .
 
     op proved : Proof -> Bool .
     ---------------------------
